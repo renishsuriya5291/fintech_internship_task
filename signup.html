@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signup - Fintech Platform</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 400px;
+            width: 100%;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        input,
+        button {
+            margin: 10px 0;
+            padding: 10px;
+            width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .message {
+            margin: 10px 0;
+            text-align: center;
+        }
+
+        .error {
+            color: red;
+        }
+
+        .success {
+            color: green;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Signup</h1>
+        <div id="message" class="message"></div>
+        <input type="text" id="name" placeholder="Full Name" required>
+        <input type="email" id="email" placeholder="Email Address" required>
+        <input type="password" id="password" placeholder="Password" required>
+        <button onclick="signup()">Signup</button>
+        <p>Already have an account? <a href="login.html">Login here</a></p>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000'; // Update with your API URL
+
+        const isValidName = (name) => {
+            // Check if name contains at least two words
+            return name.trim().split(/\s+/).length >= 2;
+        };
+
+        const isValidEmail = (email) => {
+            // Simple email validation regex
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        };
+
+        const isValidPassword = (password) => {
+            // Password must be at least 8 characters long
+            return password.length >= 8;
+        };
+
+        const signup = async () => {
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            if (!isValidName(name)) {
+                document.getElementById('message').className = 'message error';
+                document.getElementById('message').textContent = 'Please enter a valid full name (at least first and last name).';
+                return;
+            }
+
+            if (!isValidEmail(email)) {
+                document.getElementById('message').className = 'message error';
+                document.getElementById('message').textContent = 'Please enter a valid email address.';
+                return;
+            }
+
+            if (!isValidPassword(password)) {
+                document.getElementById('message').className = 'message error';
+                document.getElementById('message').textContent = 'Password must be at least 8 characters long.';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/signup`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, password })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    document.getElementById('message').className = 'message success';
+                    document.getElementById('message').textContent = 'Signup successful! Redirecting to login page...';
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 2000);
+                } else {
+                    const error = await response.json();
+                    document.getElementById('message').className = 'message error';
+                    document.getElementById('message').textContent = `Signup failed: ${error.error}`;
+                }
+            } catch (error) {
+                document.getElementById('message').className = 'message error';
+                document.getElementById('message').textContent = `Signup failed: ${error.message}`;
+            }
+        };
+    </script>
+</body>
+
+</html>
