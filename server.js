@@ -36,6 +36,8 @@ const hasuraRequest = async (query, variables) => {
   }
 };
 
+
+
 // Route to handle deposits
 app.post('/deposit', async (req, res) => {
   const { userId, amount } = req.body;
@@ -256,16 +258,57 @@ app.post('/withdraw', async (req, res) => {
   }
 });
 
+// Route to fetch user info
+app.get('/user', authenticateJWT, async (req, res) => {
+  const { id } = req.user;
+  const userQuery = `
+    query($id: Int!) {
+      users_by_pk(id: $id) {
+        name
+        email
+      }
+    }
+  `;
+  try {
+    const result = await hasuraRequest(userQuery, { id });
+    res.json(result.data.users_by_pk);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/user', authenticateJWT, async (req, res) => {
+  const { name } = req.body;
+  const { id } = req.user;
+  const updateQuery = `
+    mutation($id: Int!, $name: String!) {
+      update_users_by_pk(pk_columns: {id: $id}, _set: {name: $name}) {
+        id
+        name
+      }
+    }
+  `;
+  try {
+    const result = await hasuraRequest(updateQuery, { id, name });
+    res.json(result.data.update_users_by_pk);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+
 // Route for handling GraphQL queries
 app.post('/graphql', async (req, res) => {
-  const { query } = req.body;
+  const { query, variables } = req.body;
   try {
-    const result = await hasuraRequest(query, {});
+    const result = await hasuraRequest(query, variables);
     res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
+
 
 // Start the server
 app.listen(PORT, () => {
