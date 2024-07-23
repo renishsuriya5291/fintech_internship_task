@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fintech Platform</title>
+  <style>
+    body { font-family: Arial, sans-serif; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    input, button { margin: 10px 0; padding: 10px; width: 100%; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Fintech Platform</h1>
+    <div>
+      <h2>Deposit</h2>
+      <input type="number" id="deposit-amount" placeholder="Amount" min="0">
+      <button onclick="deposit()">Deposit</button>
+    </div>
+    <div>
+      <h2>Withdraw</h2>
+      <input type="number" id="withdraw-amount" placeholder="Amount" min="0">
+      <button onclick="withdraw()">Withdraw</button>
+    </div>
+    <div>
+      <h2>Check Balance</h2>
+      <button onclick="checkBalance()">Check Balance</button>
+      <p id="balance"></p>
+    </div>
+  </div>
+  <script>
+    const userId = 1; // Assume user ID 1 for simplicity
+    const API_URL = 'http://localhost:3000';
+
+    const deposit = async () => {
+      const amount = document.getElementById('deposit-amount').value;
+      if (!amount) return alert('Please enter an amount');
+      try {
+        const response = await fetch(`${API_URL}/deposit`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, amount: parseFloat(amount) })
+        });
+        if (response.ok) {
+          alert('Deposit successful!');
+        } else {
+          const error = await response.json();
+          alert(`Deposit failed: ${error.message}`);
+        }
+      } catch (error) {
+        alert(`Deposit failed: ${error.message}`);
+      }
+    };
+
+    const withdraw = async () => {
+      const amount = document.getElementById('withdraw-amount').value;
+      if (!amount) return alert('Please enter an amount');
+      try {
+        const response = await fetch(`${API_URL}/withdraw`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, amount: parseFloat(amount) })
+        });
+        if (response.ok) {
+          alert('Withdrawal successful!');
+        } else {
+          const error = await response.json();
+          alert(`Withdrawal failed: ${error.error || error.message}`);
+        }
+      } catch (error) {
+        alert(`Withdrawal failed: ${error.message}`);
+      }
+    };
+
+    const checkBalance = async () => {
+      const query = `
+        query {
+          users_by_pk(id: ${userId}) {
+            balance
+          }
+        }
+      `;
+      try {
+        const response = await fetch(`${API_URL}/graphql`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query })
+        });
+        if (response.ok) {
+          const result = await response.json();
+          if (result.errors) {
+            throw new Error(result.errors.map(e => e.message).join(', '));
+          }
+          document.getElementById('balance').textContent = `Balance: ${result.data.users_by_pk.balance}`;
+        } else {
+          const error = await response.json();
+          alert(`Failed to fetch balance: ${error.message}`);
+        }
+      } catch (error) {
+        alert(`Failed to fetch balance: ${error.message}`);
+      }
+    };
+  </script>
+</body>
+</html>
