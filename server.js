@@ -8,7 +8,7 @@ const bcrypt = require('bcrypt');
 const saltRounds = 10;
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 
 // Middleware setup
 app.use(bodyParser.json());
@@ -64,11 +64,16 @@ app.post('/deposit', async (req, res) => {
 
 app.post('/transfer', async (req, res) => {
   const { fromUserId, toUserId, amount } = req.body;
+
   if (!fromUserId || !toUserId || !amount) {
     return res.status(400).json({ error: 'Please provide fromUserId, toUserId, and amount' });
   }
 
-  // Query to check the sender's current balance
+  if (fromUserId === toUserId) {
+    return res.status(400).json({ error: 'Transfer to the same account is not allowed' });
+  }
+
+  // Query to check the user's current balance
   const checkBalanceQuery = `
     query($userId: Int!) {
       users_by_pk(id: $userId) {
@@ -99,8 +104,14 @@ app.post('/transfer', async (req, res) => {
 
   try {
     // Fetch sender's current balance
-    const balanceResult = await hasuraRequest(checkBalanceQuery, { userId: fromUserId });
-    const currentBalance = balanceResult.data.users_by_pk.balance;
+    const senderBalanceResult = await hasuraRequest(checkBalanceQuery, { userId: fromUserId });
+    const senderData = senderBalanceResult.data.users_by_pk;
+
+    if (!senderData) {
+      return res.status(404).json({ error: 'Sender not found' });
+    }
+
+    const currentBalance = senderData.balance;
 
     // Check if balance is sufficient for transfer
     if (currentBalance < amount) {
@@ -110,7 +121,13 @@ app.post('/transfer', async (req, res) => {
 
     // Fetch recipient's current balance
     const recipientBalanceResult = await hasuraRequest(checkBalanceQuery, { userId: toUserId });
-    const recipientCurrentBalance = recipientBalanceResult.data.users_by_pk.balance;
+    const recipientData = recipientBalanceResult.data.users_by_pk;
+
+    if (!recipientData) {
+      return res.status(404).json({ error: 'Recipient not found' });
+    }
+
+    const recipientCurrentBalance = recipientData.balance;
     const recipientFinalBalance = recipientCurrentBalance + amount;
 
     // Proceed with updates
@@ -122,6 +139,7 @@ app.post('/transfer', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
 
 
 

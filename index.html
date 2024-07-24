@@ -149,7 +149,7 @@
     <script src="https://cdn.jsdelivr.net/npm/jwt-decode@3.1.2/build/jwt-decode.min.js"></script>
 
     <script>
-        const API_URL = 'http://localhost:3000';
+        const API_URL = 'http://localhost:5000';
 
         const getUserIdFromToken = () => {
             const token = localStorage.getItem('jwt');
@@ -170,6 +170,11 @@
         };
 
         const deposit = async () => {
+            const depositAmount = document.getElementById('deposit-amount').value;
+            if (depositAmount <= 0) {
+                alert('Please enter a valid deposit amount greater than zero.');
+                return;
+            }
             const userId = getUserIdFromToken();
             if (!userId) return alert('User not authenticated');
 
@@ -199,6 +204,11 @@
         };
 
         const withdraw = async () => {
+            const withdrawAmount = document.getElementById('withdraw-amount').value;
+            if (withdrawAmount <= 0) {
+                alert('Please enter a valid withdrawal amount greater than zero.');
+                return;
+            }
             const userId = getUserIdFromToken();
             if (!userId) return alert('User not authenticated');
 
@@ -252,10 +262,10 @@
                     checkBalance(userId);
                 } else {
                     const error = await response.json();
-                    alert(`Payment failed: ${error.message}`);
+                    alert(`Payment failed: ${error.error}`);
                 }
             } catch (error) {
-                alert(`Payment failed: ${error.message}`);
+                alert(`Payment failed: User Not Found`);
             }
         };
 
